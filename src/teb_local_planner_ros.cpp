@@ -237,16 +237,18 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   
   // Get robot pose
   geometry_msgs::PoseStamped robot_pose;
-  costmap_ros_->getRobotPose(robot_pose);
+  tf::Stamped<tf::Pose> robot_pose_tf;
+  costmap_ros_->getRobotPose(robot_pose_tf);
+  tf::poseStampedTFToMsg(robot_pose_tf,robot_pose);
   robot_pose_ = PoseSE2(robot_pose.pose);
-    
+ 
   // Get robot velocity
-  geometry_msgs::PoseStamped robot_vel_tf;
+  tf::Stamped<tf::Pose> robot_vel_tf;
   odom_helper_.getRobotVel(robot_vel_tf);
-  robot_vel_.linear.x = robot_vel_tf.pose.position.x;
-  robot_vel_.linear.y = robot_vel_tf.pose.position.y;
-  robot_vel_.angular.z = tf2::getYaw(robot_vel_tf.pose.orientation);
-  
+  robot_vel_.linear.x = robot_vel_tf.getOrigin().getX();
+  robot_vel_.linear.y = robot_vel_tf.getOrigin().getY();
+  robot_vel_.angular.z = tf::getYaw(robot_vel_tf.getRotation());
+ 
   // prune global plan to cut off parts of the past (spatially before the robot)
   pruneGlobalPlan(*tf_, robot_pose, global_plan_);
 

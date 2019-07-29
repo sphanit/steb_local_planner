@@ -209,13 +209,13 @@ target_link_libraries(teb_local_planner
 
 ## Build additional executables
 
-add_executable(test_optim_node src/test_optim_node.cpp)
+#add_executable(test_optim_node src/test_optim_node.cpp)
 
-target_link_libraries(test_optim_node
-   teb_local_planner
-   ${EXTERNAL_LIBS}
-   ${catkin_LIBRARIES}
-)
+#target_link_libraries(test_optim_node
+#   teb_local_planner
+#   ${EXTERNAL_LIBS}
+#   ${catkin_LIBRARIES}
+#)
 
 
 #############
@@ -236,9 +236,9 @@ target_link_libraries(test_optim_node
 install(TARGETS teb_local_planner
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
-install(TARGETS test_optim_node
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(TARGETS test_optim_node
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 ## Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME}/
