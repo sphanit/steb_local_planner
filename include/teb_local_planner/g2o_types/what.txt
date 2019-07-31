@@ -1,0 +1,103 @@
+I am here
+I am in if_1
+radius square is0.4096
+f is 0.447757
+I am in if_2
+0.324249
+velocity of robot0.502882
+ 0.95293
+velocity of human0
+0
+I am here
+I am in if_1
+radius square is0.4096
+f is -0.565536
+inf
+velocity of robot0.502882
+ 0.95293
+velocity of human0
+0
+
+
+
+I am here
+I am in if_1 1.37051
+V2 is 2.67686
+radius square is0.4096
+f is 1.0823
+I am in if_2
+0.123342
+velocity of robot  1.6309
+0.130547
+velocity of human0
+0
+I am here
+I am in if_1 4.43165
+V2 is 2.67686
+radius square is0.4096
+f is -19.3877
+inf
+velocity of robot  1.6309
+0.130547
+velocity of human0
+0
+
+
+C is   1.21005
+0.0523088
+pos_human is 5.11756
+2.03747
+I am here
+I am in if_1 0.201596
+V2 is 0.0396204
+radius square is0.4096
+f is -0.00125164
+inf
+velocity of robot0.171006
+-0.10187
+velocity of human0
+0
+C is   1.16383
+0.0798444
+pos_human is 5.11756
+2.03747
+I am here
+I am in if_1 0.199917
+V2 is 0.0420145
+radius square is0.4096
+f is -3.55516e-10
+inf
+velocity of robot0.178668
+-0.10046
+velocity of human0
+0
+C is  1.11551
+0.107009
+pos_human is 5.11756
+2.03747
+I am here
+I am in if_1 0.971418
+V2 is 0.752223
+radius square is0.4096
+f is 0.307108
+I am in if_2
+0.554683
+velocity of robot0.860188
+0.110904
+velocity of human0
+0
+C is  0.833602
+0.0706626
+pos_human is 5.11756
+2.03747
+I am here
+I am in if_1 2.40217
+V2 is 8.25086
+radius square is0.4096
+f is 3.37531
+I am in if_2
+0.0684737
+velocity of robot 2.85454
+0.320139
+velocity of human0
+0
