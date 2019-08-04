@@ -105,6 +105,7 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     // create the planner instance
     if (cfg_.socialTeb.use_social_teb){
       ROS_INFO("Social constraints enabled.");
+      ROS_INFO("Howdy");
       humansProvider_ = std::shared_ptr<HumansProvider>(new HumansProvider(gnh, nh));
       if(!humansProvider_){
         ROS_INFO("Underworld is not running");

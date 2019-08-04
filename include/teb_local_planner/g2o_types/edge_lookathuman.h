@@ -28,7 +28,6 @@ public:
 
     double c_lookat;
 
-
     c_lookat = fabs(rdeltaPsi - cfg_->socialTeb.lookathuman_cost_threshold);
 
     _error[0] = penaltyBoundFromAbove(c_lookat, cfg_->socialTeb.lookathuman_cost_threshold,
