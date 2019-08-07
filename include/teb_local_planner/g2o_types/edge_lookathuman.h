@@ -27,8 +27,9 @@ public:
     double rdeltaPsi = fabs(acos(robotLookAt.dot(d_rtoh) / (robotLookAt.norm() * d_rtoh.norm())));
 
     double c_lookat;
-
+    
     c_lookat = fabs(rdeltaPsi - cfg_->socialTeb.lookathuman_cost_threshold);
+
 
     _error[0] = penaltyBoundFromAbove(c_lookat, cfg_->socialTeb.lookathuman_cost_threshold,
                                   cfg_->optim.penalty_epsilon);

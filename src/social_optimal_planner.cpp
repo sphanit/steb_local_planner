@@ -169,7 +169,7 @@ bool SocialTebOptimalPlanner::buildGraph(double weight_multiplier){
 
   if(cfg_->socialTeb.use_proxemics){
     AddEdgesProxemics();
-    //ROS_INFO("Proxemics edge added");
+    // ROS_INFO("Proxemics edge added");
   }
 
   // if(cfg_->socialTeb.use_ttc){
@@ -189,7 +189,7 @@ bool SocialTebOptimalPlanner::buildGraph(double weight_multiplier){
 
   if(cfg_->socialTeb.use_lookathuman){
     AddEdgesLookatHuman();
-    //ROS_INFO("LookatHuman edge added");
+    // ROS_INFO("Visibility edge added");
   }
 
   return true;
@@ -210,7 +210,7 @@ void SocialTebOptimalPlanner::AddEdgesProxemics(){
 
     // iterate obstacles
     for (const HumanPtr& human : *humans_)
-    { //std::cout << "Entered the humans loop" << std::endl;
+    {
 
       // calculate distance to current pose
       double dist = human->getMinimumDistance(teb_.Pose(i).position());
@@ -356,7 +356,7 @@ void SocialTebOptimalPlanner::AddEdgesVisibility(){
 void SocialTebOptimalPlanner::AddEdgesLookatHuman(){
   Eigen::Matrix<double,1,1> information;
   information.fill(cfg_->optim.weight_social_lookathuman);
-
+  int n = teb_.sizePoses()-1;
   // iterate all teb points (skip first and last)
   for (int i=1; i < teb_.sizePoses()-1; ++i)
   {
@@ -368,7 +368,7 @@ void SocialTebOptimalPlanner::AddEdgesLookatHuman(){
 
     // iterate obstacles
     for (const HumanPtr& human : *humans_)
-    { //std::cout << "Entered the humans loop" << std::endl;
+    {
       // calculate distance to current pose
       double dist = human->getMinimumDistance(teb_.Pose(i).position());
 
@@ -376,12 +376,12 @@ void SocialTebOptimalPlanner::AddEdgesLookatHuman(){
       Eigen::Vector2d d_rtoh = human->position() - teb_.Pose(i).position();
       Eigen::Vector2d humanLookAt = {cos(human->getTheta()), sin(human->getTheta())};
       double hdeltaPsi = fabs(acos(humanLookAt.dot(d_rtoh) / (humanLookAt.norm() * d_rtoh.norm())));
-      //std::cout << "Human Theta" << human->getTheta() << std::endl;
-      //std::cout << "Robot Theta" << teb_.Pose(i).theta() << std::endl;
-
+      Eigen::Vector2d vec_goal = teb_.Pose(n).position() - teb_.Pose(1).position();
+      double dist_goal = vec_goal.norm();
       // force considering obstacle if really close to the current pose
       if ((dist < cfg_->socialTeb.min_robot_human_distance * cfg_->socialTeb.robot_human_distance_cutoff_factor) && (hdeltaPsi >= cfg_->socialTeb.fov * M_PI/180))
       {
+        if(dist_goal > 0.5)
         relevant_humans.push_back(human.get());
         continue;
       }
