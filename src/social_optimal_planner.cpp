@@ -167,7 +167,30 @@ bool SocialTebOptimalPlanner::buildGraph(double weight_multiplier){
 
   AddEdgesPreferRotDir();
 
-  AddEdgesProxemics();
+  if(cfg_->socialTeb.use_proxemics){
+    AddEdgesProxemics();
+    // ROS_INFO("Proxemics edge added");
+  }
+
+  // if(cfg_->socialTeb.use_ttc){
+  //   AddEdgesTTC();
+  //   // ROS_INFO("TTC edge added");
+  // }
+  //
+  // if(cfg_->socialTeb.use_directional){
+  //   AddEdgesDirectional();
+  //   // ROS_INFO("Directional edge added");
+  // }
+  //
+  // if(cfg_->socialTeb.use_visibility){
+  //   AddEdgesVisibility();
+  //   // ROS_INFO("Visibility edge added");
+  // }
+
+  if(cfg_->socialTeb.use_lookathuman){
+    AddEdgesLookatHuman();
+    // ROS_INFO("Visibility edge added");
+  }
 
   return true;
 }
@@ -207,6 +230,170 @@ void SocialTebOptimalPlanner::AddEdgesProxemics(){
       dist_bandpt_prox->setInformation(information);
       dist_bandpt_prox->setParameters(*cfg_, robot_model_.get(), human);
       optimizer_->addEdge(dist_bandpt_prox);
+    }
+  }
+}
+
+void SocialTebOptimalPlanner::AddEdgesTTC(){
+  Eigen::Matrix<double,1,1> information;
+  information.fill(cfg_->optim.weight_social_ttc);
+  // information.fill(cfg_->optim.weight_social_ttc);
+
+  // iterate all teb points (skip first and last)
+  for (int i=1; i < teb_.sizePoses()-1; ++i)
+  {
+    Human* human = nullptr;
+    std::vector<Human*> relevant_humans;
+
+  // iterate obstacles
+    for (const HumanPtr& human : *humans_)
+    {
+      // calculate distance to current pose
+      double dist = human->getMinimumDistance(teb_.Pose(i).position());
+
+      // force considering obstacle if really close to the current pose
+      if (dist < 2.0)
+      {
+        relevant_humans.push_back(human.get());
+        continue;
+      }
+    }
+
+    for (const Human* human : relevant_humans)
+    {
+      EdgeTTC *ttc_edge = new EdgeTTC;
+      // const double robot_radius_ = robot_model_->getInscribedRadius();
+      ttc_edge->setVertex(0, teb_.PoseVertex(i));
+      ttc_edge->setVertex(1, teb_.PoseVertex(i + 1));
+      ttc_edge->setVertex(2, teb_.TimeDiffVertex(i));
+      ttc_edge->setInformation(information);
+      ttc_edge->setParameters(*cfg_, robot_model_->getInscribedRadius(), human);
+      optimizer_->addEdge(ttc_edge);
+    }
+  }
+}
+
+void SocialTebOptimalPlanner::AddEdgesDirectional(){
+  Eigen::Matrix<double,1,1> information;
+  information.fill(cfg_->optim.weight_social_directional);
+
+  // iterate all teb points (skip first and last)
+  for (int i=1; i < teb_.sizePoses()-1; ++i)
+  {
+    Human* human = nullptr;
+
+    std::vector<Human*> relevant_humans;
+
+    const Eigen::Vector2d pose_orient = teb_.Pose(i).orientationUnitVec();
+
+    // iterate obstacles
+    for (const HumanPtr& human : *humans_)
+    {
+
+      // calculate distance to current pose
+      double dist = human->getMinimumDistance(teb_.Pose(i).position());
+
+      // force considering obstacle if really close to the current pose
+      if (dist < cfg_->socialTeb.min_robot_human_distance * cfg_->socialTeb.robot_human_distance_cutoff_factor)
+      {
+        relevant_humans.push_back(human.get());
+        continue;
+      }
+    }
+
+    for (const Human* human : relevant_humans)
+    {
+      EdgeDirectional* edge_directional = new EdgeDirectional();
+      edge_directional->setVertex(0, teb_.PoseVertex(i));
+      edge_directional->setVertex(1, teb_.PoseVertex(i + 1));
+      edge_directional->setVertex(2, teb_.TimeDiffVertex(i));
+      edge_directional->setInformation(information);
+      edge_directional->setParameters(*cfg_, human);
+      optimizer_->addEdge(edge_directional);
+    }
+  }
+}
+
+void SocialTebOptimalPlanner::AddEdgesVisibility(){
+  Eigen::Matrix<double,1,1> information;
+  information.fill(cfg_->optim.weight_social_visibility);
+
+  // iterate all teb points (skip first and last)
+  for (int i=1; i < teb_.sizePoses()-1; ++i)
+  {
+    Human* human = nullptr;
+
+    std::vector<Human*> relevant_humans;
+
+    const Eigen::Vector2d pose_orient = teb_.Pose(i).orientationUnitVec();
+
+    // iterate obstacles
+    for (const HumanPtr& human : *humans_)
+    {
+
+      // calculate distance to current pose
+      double dist = human->getMinimumDistance(teb_.Pose(i).position());
+
+      // force considering obstacle if really close to the current pose
+      if (dist < cfg_->socialTeb.min_robot_human_distance * cfg_->socialTeb.robot_human_distance_cutoff_factor)
+      {
+        relevant_humans.push_back(human.get());
+        continue;
+      }
+    }
+
+    for (const Human* human : relevant_humans)
+    {
+      EdgeVisibility *visibility_edge = new EdgeVisibility;
+      visibility_edge->setVertex(0, teb_.PoseVertex(i));
+      visibility_edge->setInformation(information);
+      visibility_edge->setParameters(*cfg_, human);;
+      optimizer_->addEdge(visibility_edge);
+    }
+  }
+}
+
+void SocialTebOptimalPlanner::AddEdgesLookatHuman(){
+  Eigen::Matrix<double,1,1> information;
+  information.fill(cfg_->optim.weight_social_lookathuman);
+  int n = teb_.sizePoses()-1;
+  // iterate all teb points (skip first and last)
+  for (int i=1; i < teb_.sizePoses()-1; ++i)
+  {
+    Human* human = nullptr;
+
+    std::vector<Human*> relevant_humans;
+
+    const Eigen::Vector2d pose_orient = teb_.Pose(i).orientationUnitVec();
+
+    // iterate obstacles
+    for (const HumanPtr& human : *humans_)
+    {
+      // calculate distance to current pose
+      double dist = human->getMinimumDistance(teb_.Pose(i).position());
+
+      //calculate position of robot
+      Eigen::Vector2d d_rtoh = human->position() - teb_.Pose(i).position();
+      Eigen::Vector2d humanLookAt = {cos(human->getTheta()), sin(human->getTheta())};
+      double hdeltaPsi = fabs(acos(humanLookAt.dot(d_rtoh) / (humanLookAt.norm() * d_rtoh.norm())));
+      Eigen::Vector2d vec_goal = teb_.Pose(n).position() - teb_.Pose(1).position();
+      double dist_goal = vec_goal.norm();
+      // force considering obstacle if really close to the current pose
+      if ((dist < cfg_->socialTeb.min_robot_human_distance * cfg_->socialTeb.robot_human_distance_cutoff_factor) && (hdeltaPsi >= cfg_->socialTeb.fov * M_PI/180))
+      {
+        if(dist_goal > 0.5)
+        relevant_humans.push_back(human.get());
+        continue;
+      }
+    }
+
+    for (const Human* human : relevant_humans)
+    {
+      EdgeLookatHuman *lookathuman_edge = new EdgeLookatHuman;
+      lookathuman_edge->setVertex(0, teb_.PoseVertex(i));
+      lookathuman_edge->setInformation(information);
+      lookathuman_edge->setParameters(*cfg_, human);;
+      optimizer_->addEdge(lookathuman_edge);
     }
   }
 }

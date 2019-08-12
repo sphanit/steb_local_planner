@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 #define UWDS_SERVICE_NAME "/uwds/get_scene"
-#define HUMANS_WORLD "robot/env"
+#define HUMANS_WORLD "robot/merged"
 
 namespace teb_local_planner {
 
@@ -24,7 +24,7 @@ public:
   const float humanRadius = 0.3;
 
 protected:
-  void onChanges(string world_name, Header header, Invalidations invalidations);
+   void onChanges(string world_name, Header header, Invalidations invalidations);
 
   std::unordered_map<std::string, Human> humans_;
   boost::mutex humans_mutex_;

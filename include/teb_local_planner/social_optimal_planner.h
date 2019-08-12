@@ -49,6 +49,10 @@
 
 // Custom g2o types
 #include <teb_local_planner/g2o_types/edge_proxemics.h>
+#include <teb_local_planner/g2o_types/edge_ttc.h>
+#include <teb_local_planner/g2o_types/edge_directional.h>
+#include <teb_local_planner/g2o_types/edge_visibility.h>
+#include <teb_local_planner/g2o_types/edge_lookathuman.h>
 
 namespace teb_local_planner
 {
@@ -57,12 +61,12 @@ namespace teb_local_planner
 /**
  * @class SocialTebOptimalPlanner
  * @brief This class optimizes an internal Timed Elastic Band trajectory using the g2o-framework.
- * 
+ *
  * For an introduction and further details about the TEB optimization problem refer to:
  * 	- C. Rösmann et al.: Trajectory modification considering dynamic constraints of autonomous robots, ROBOTIK, 2012.
  * 	- C. Rösmann et al.: Efficient trajectory optimization using a sparse model, ECMR, 2013.
- * 	- R. Kümmerle et al.: G2o: A general framework for graph optimization, ICRA, 2011. 
- * 
+ * 	- R. Kümmerle et al.: G2o: A general framework for graph optimization, ICRA, 2011.
+ *
  * @todo: Call buildGraph() only if the teb structure has been modified to speed up hot-starting from previous solutions.
  * @todo: We introduced the non-fast mode with the support of dynamic obstacles
  *        (which leads to better results in terms of x-y-t homotopy planning).
@@ -72,12 +76,12 @@ namespace teb_local_planner
 class SocialTebOptimalPlanner : public TebOptimalPlanner
 {
 public:
-    
+
   /**
    * @brief Default constructor
    */
   SocialTebOptimalPlanner();
-  
+
   /**
    * @brief Construct and initialize the TEB optimal planner.
    * @param cfg Const reference to the TebConfig class for internal parameters
@@ -88,7 +92,7 @@ public:
    */
   SocialTebOptimalPlanner(const TebConfig& cfg, ObstContainer* obstacles = NULL, RobotFootprintModelPtr robot_model = boost::make_shared<PointRobotFootprint>(),
                     TebVisualizationPtr visual = TebVisualizationPtr(), const ViaPointContainer* via_points = NULL, HumanContainer* humans = NULL);
-  
+
   /**
    * @brief Destruct the optimal planner.
    */
@@ -112,11 +116,15 @@ protected:
   static void registerG2OTypesWithHumans();
   bool buildGraph(double weight_multiplier=1.0) override;
   void AddEdgesProxemics();
+  void AddEdgesTTC();
+  void AddEdgesDirectional();
+  void AddEdgesVisibility();
+  void AddEdgesLookatHuman();
 
   // external objects (store weak pointers)
   HumanContainer* humans_; //!< Store humans that are relevant for planning
 
-  
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

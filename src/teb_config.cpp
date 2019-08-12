@@ -114,6 +114,7 @@ void TebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh)
   nh.param("weight_kinematics_forward_drive", optim.weight_kinematics_forward_drive, optim.weight_kinematics_forward_drive);
   nh.param("weight_kinematics_turning_radius", optim.weight_kinematics_turning_radius, optim.weight_kinematics_turning_radius);
   nh.param("weight_optimaltime", optim.weight_optimaltime, optim.weight_optimaltime);
+  nh.param("weight_shortest_path", optim.weight_shortest_path, optim.weight_shortest_path);
   nh.param("weight_obstacle", optim.weight_obstacle, optim.weight_obstacle);
   nh.param("weight_inflation", optim.weight_inflation, optim.weight_inflation);
   nh.param("weight_dynamic_obstacle", optim.weight_dynamic_obstacle, optim.weight_dynamic_obstacle);    
@@ -122,31 +123,35 @@ void TebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh)
   nh.param("weight_prefer_rotdir", optim.weight_prefer_rotdir, optim.weight_prefer_rotdir);
   nh.param("weight_adapt_factor", optim.weight_adapt_factor, optim.weight_adapt_factor);
   nh.param("weight_social_proxemics", optim.weight_social_proxemics, optim.weight_social_proxemics);
-  
+  nh.param("weight_social_ttc", optim.weight_social_ttc, optim.weight_social_ttc);
+  nh.param("weight_social_directional", optim.weight_social_directional, optim.weight_social_directional);
+  nh.param("weight_social_visibility", optim.weight_social_visibility, optim.weight_social_visibility);
+  nh.param("weight_social_lookathuman", optim.weight_social_lookathuman, optim.weight_social_lookathuman);
+
   // Homotopy Class Planner
-  nh.param("enable_homotopy_class_planning", hcp.enable_homotopy_class_planning, hcp.enable_homotopy_class_planning); 
-  nh.param("enable_multithreading", hcp.enable_multithreading, hcp.enable_multithreading); 
-  nh.param("simple_exploration", hcp.simple_exploration, hcp.simple_exploration); 
-  nh.param("max_number_classes", hcp.max_number_classes, hcp.max_number_classes); 
+  nh.param("enable_homotopy_class_planning", hcp.enable_homotopy_class_planning, hcp.enable_homotopy_class_planning);
+  nh.param("enable_multithreading", hcp.enable_multithreading, hcp.enable_multithreading);
+  nh.param("simple_exploration", hcp.simple_exploration, hcp.simple_exploration);
+  nh.param("max_number_classes", hcp.max_number_classes, hcp.max_number_classes);
   nh.param("selection_obst_cost_scale", hcp.selection_obst_cost_scale, hcp.selection_obst_cost_scale);
   nh.param("selection_prefer_initial_plan", hcp.selection_prefer_initial_plan, hcp.selection_prefer_initial_plan);
   nh.param("selection_viapoint_cost_scale", hcp.selection_viapoint_cost_scale, hcp.selection_viapoint_cost_scale);
-  nh.param("selection_cost_hysteresis", hcp.selection_cost_hysteresis, hcp.selection_cost_hysteresis); 
-  nh.param("selection_alternative_time_cost", hcp.selection_alternative_time_cost, hcp.selection_alternative_time_cost); 
+  nh.param("selection_cost_hysteresis", hcp.selection_cost_hysteresis, hcp.selection_cost_hysteresis);
+  nh.param("selection_alternative_time_cost", hcp.selection_alternative_time_cost, hcp.selection_alternative_time_cost);
   nh.param("switching_blocking_period", hcp.switching_blocking_period, hcp.switching_blocking_period);
-  nh.param("roadmap_graph_samples", hcp.roadmap_graph_no_samples, hcp.roadmap_graph_no_samples); 
-  nh.param("roadmap_graph_area_width", hcp.roadmap_graph_area_width, hcp.roadmap_graph_area_width); 
+  nh.param("roadmap_graph_samples", hcp.roadmap_graph_no_samples, hcp.roadmap_graph_no_samples);
+  nh.param("roadmap_graph_area_width", hcp.roadmap_graph_area_width, hcp.roadmap_graph_area_width);
   nh.param("roadmap_graph_area_length_scale", hcp.roadmap_graph_area_length_scale, hcp.roadmap_graph_area_length_scale);
-  nh.param("h_signature_prescaler", hcp.h_signature_prescaler, hcp.h_signature_prescaler); 
-  nh.param("h_signature_threshold", hcp.h_signature_threshold, hcp.h_signature_threshold); 
-  nh.param("obstacle_keypoint_offset", hcp.obstacle_keypoint_offset, hcp.obstacle_keypoint_offset); 
-  nh.param("obstacle_heading_threshold", hcp.obstacle_heading_threshold, hcp.obstacle_heading_threshold); 
+  nh.param("h_signature_prescaler", hcp.h_signature_prescaler, hcp.h_signature_prescaler);
+  nh.param("h_signature_threshold", hcp.h_signature_threshold, hcp.h_signature_threshold);
+  nh.param("obstacle_keypoint_offset", hcp.obstacle_keypoint_offset, hcp.obstacle_keypoint_offset);
+  nh.param("obstacle_heading_threshold", hcp.obstacle_heading_threshold, hcp.obstacle_heading_threshold);
   nh.param("viapoints_all_candidates", hcp.viapoints_all_candidates, hcp.viapoints_all_candidates);
-  nh.param("visualize_hc_graph", hcp.visualize_hc_graph, hcp.visualize_hc_graph); 
+  nh.param("visualize_hc_graph", hcp.visualize_hc_graph, hcp.visualize_hc_graph);
   nh.param("visualize_with_time_as_z_axis_scale", hcp.visualize_with_time_as_z_axis_scale, hcp.visualize_with_time_as_z_axis_scale);
-  
+
   // Recovery
-  
+
   nh.param("shrink_horizon_backup", recovery.shrink_horizon_backup, recovery.shrink_horizon_backup);
   nh.param("shrink_horizon_min_duration", recovery.shrink_horizon_min_duration, recovery.shrink_horizon_min_duration);
   nh.param("oscillation_recovery", recovery.oscillation_recovery, recovery.oscillation_recovery);
@@ -159,15 +164,25 @@ void TebConfig::loadRosParamFromNodeHandle(const ros::NodeHandle& nh)
   nh.param("use_social_teb", socialTeb.use_social_teb, socialTeb.use_social_teb);
   nh.param("min_robot_human_distance", socialTeb.min_robot_human_distance, socialTeb.min_robot_human_distance);
   nh.param("robot_human_distance_cutoff_factor", socialTeb.robot_human_distance_cutoff_factor, socialTeb.robot_human_distance_cutoff_factor);
+  nh.param("ttc_threshold", socialTeb.ttc_threshold, socialTeb.ttc_threshold);
+  nh.param("directional_cost_threshold", socialTeb.directional_cost_threshold, socialTeb.directional_cost_threshold);
+  nh.param("visibility_cost_threshold", socialTeb.visibility_cost_threshold, socialTeb.visibility_cost_threshold);
+  nh.param("lookathuman_cost_threshold", socialTeb.lookathuman_cost_threshold, socialTeb.lookathuman_cost_threshold);
+  nh.param("use_proxemics",socialTeb.use_proxemics,socialTeb.use_proxemics);
+  // nh.param("use_ttc",socialTeb.use_ttc,socialTeb.use_ttc);
+  // nh.param("use_directional",socialTeb.use_directional,socialTeb.use_directional);
+  // nh.param("use_visibility",socialTeb.use_visibility,socialTeb.use_visibility);
+  nh.param("use_lookathuman",socialTeb.use_lookathuman,socialTeb.use_lookathuman);
+  nh.param("fov",socialTeb.fov,socialTeb.fov);
 
   checkParameters();
   checkDeprecated(nh);
 }
 
 void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
-{ 
+{
   boost::mutex::scoped_lock l(config_mutex_);
-  
+
   // Trajectory
   trajectory.teb_autosize = cfg.teb_autosize;
   trajectory.dt_ref = cfg.dt_ref;
@@ -181,8 +196,8 @@ void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
   trajectory.force_reinit_new_goal_dist = cfg.force_reinit_new_goal_dist;
   trajectory.feasibility_check_no_poses = cfg.feasibility_check_no_poses;
   trajectory.publish_feedback = cfg.publish_feedback;
-  
-  // Robot     
+
+  // Robot
   robot.max_vel_x = cfg.max_vel_x;
   robot.max_vel_x_backwards = cfg.max_vel_x_backwards;
   robot.max_vel_y = cfg.max_vel_y;
@@ -228,12 +243,17 @@ void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
   optim.weight_kinematics_forward_drive = cfg.weight_kinematics_forward_drive;
   optim.weight_kinematics_turning_radius = cfg.weight_kinematics_turning_radius;
   optim.weight_optimaltime = cfg.weight_optimaltime;
+  optim.weight_shortest_path = cfg.weight_shortest_path;
   optim.weight_obstacle = cfg.weight_obstacle;
   optim.weight_inflation = cfg.weight_inflation;
   optim.weight_dynamic_obstacle = cfg.weight_dynamic_obstacle;
   optim.weight_dynamic_obstacle_inflation = cfg.weight_dynamic_obstacle_inflation;
   optim.weight_viapoint = cfg.weight_viapoint;
   optim.weight_social_proxemics = cfg.weight_social_proxemics;
+  // optim.weight_social_ttc = cfg.weight_social_ttc;
+  // optim.weight_social_directional = cfg.weight_social_directional;
+  // optim.weight_social_visibility = cfg.weight_social_visibility;
+  optim.weight_social_lookathuman = cfg.weight_social_lookathuman;
   optim.weight_adapt_factor = cfg.weight_adapt_factor;
   
   // Homotopy Class Planner
@@ -265,6 +285,17 @@ void TebConfig::reconfigure(TebLocalPlannerReconfigureConfig& cfg)
   socialTeb.use_social_teb = cfg.use_social_teb;
   socialTeb.min_robot_human_distance = cfg.min_robot_human_distance;
   socialTeb.robot_human_distance_cutoff_factor = cfg.robot_human_distance_cutoff_factor;
+  socialTeb.lookathuman_cost_threshold = cfg.lookathuman_cost_threshold;
+  // socialTeb.ttc_threshold = cfg.ttc_threshold;
+  // socialTeb.directional_cost_threshold = cfg.directional_cost_threshold;
+  // socialTeb.visibility_cost_threshold = cfg.visibility_cost_threshold;
+  socialTeb.fov = cfg.fov;
+  socialTeb.use_proxemics = cfg.use_proxemics;
+  socialTeb.use_lookathuman = cfg.use_lookathuman;
+  // socialTeb.use_ttc = cfg.use_ttc;
+  // socialTeb.use_directional = cfg.use_directional;
+  // socialTeb.use_visibility = cfg.use_visibility;
+
 
   checkParameters();
 }

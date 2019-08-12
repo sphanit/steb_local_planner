@@ -107,6 +107,9 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     if (cfg_.socialTeb.use_social_teb){
       ROS_INFO("Social constraints enabled.");
       humansProvider_ = std::shared_ptr<HumansProvider>(new HumansProvider(gnh, nh));
+      if(!humansProvider_){
+        ROS_INFO("Underworld is not running");
+      }
       planner_ = PlannerInterfacePtr(new SocialTebOptimalPlanner(
           cfg_, &obstacles_, robot_model, visualization_, &via_points_, &humans_));
     }else {
@@ -342,6 +345,8 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   // Now perform the actual planning
 //   bool success = planner_->plan(robot_pose_, robot_goal_, robot_vel_, cfg_.goal_tolerance.free_goal_vel); // straight line init
   bool success = planner_->plan(transformed_plan, &robot_vel_, cfg_.goal_tolerance.free_goal_vel);
+  std::vector<TrajectoryPointMsg> traj;
+
   if (!success)
   {
     planner_->clearPlanner(); // force reinitialization for next time
@@ -352,7 +357,11 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     last_cmd_ = cmd_vel;
     return false;
   }
-         
+  else
+  {
+    planner_->getFullTrajectory_temp(traj);
+  }
+
   // Check feasibility (but within the first few states only)
   if(cfg_.robot.is_footprint_dynamic)
   {
@@ -422,6 +431,49 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   visualization_->publishObstacles(obstacles_);
   visualization_->publishViaPoints(via_points_);
   visualization_->publishGlobalPlan(global_plan_);
+
+  /*
+  //Compute ttc
+  int num = traj.size();
+  std::cout << "Number of points is " << num <<'\n';
+
+  for(auto & human: humans_){
+    for(int ti=0;ti<num;ti++)
+    {
+      Eigen::Vector2d vel,pos;
+      vel[0] = traj[ti].velocity.linear.x;
+      vel[1] = traj[ti].velocity.linear.y;
+      pos[0] = traj[ti].pose.position.x;
+      pos[1] = traj[ti].pose.position.y;
+      Eigen::Vector2d C = human->getCentroid() - pos;
+
+      double ttc = std::numeric_limits<double>::infinity();
+      double C_sq = C.dot(C);
+      double radius_sum_sq_ = 0.4096;
+
+      if (C_sq <= radius_sum_sq_)
+      {
+        ttc = 0.0;
+      }
+      else
+      {
+        Eigen::Vector2d V = vel - human->getCentroidVelocity();
+        double C_dot_V = C.dot(V);
+        double C_dot_Vh = C.dot(human->getCentroidVelocity());
+        if ((C_dot_V > 0) && (C_dot_Vh <= 0)) { // otherwise ttc is infinite
+          double V_sq = V.dot(V);
+          double f = (C_dot_V * C_dot_V)- (V_sq * (C_sq - radius_sum_sq_));
+          if (f > 0) { // otherwise ttc is infinite
+            ttc = (C_dot_V - std::sqrt(f)) / V_sq;
+          }
+        }
+      }
+
+      std::cout << ttc << '\n';
+    }
+  }
+  */
+
   return true;
 }
 

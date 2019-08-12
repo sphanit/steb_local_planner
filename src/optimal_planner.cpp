@@ -124,6 +124,7 @@ void TebOptimalPlanner::registerG2OTypes()
   factory->registerType("VERTEX_TIMEDIFF", new g2o::HyperGraphElementCreator<VertexTimeDiff>);
 
   factory->registerType("EDGE_TIME_OPTIMAL", new g2o::HyperGraphElementCreator<EdgeTimeOptimal>);
+  factory->registerType("EDGE_SHORTEST_PATH", new g2o::HyperGraphElementCreator<EdgeShortestPath>);
   factory->registerType("EDGE_VELOCITY", new g2o::HyperGraphElementCreator<EdgeVelocity>);
   factory->registerType("EDGE_VELOCITY_HOLONOMIC", new g2o::HyperGraphElementCreator<EdgeVelocityHolonomic>);
   factory->registerType("EDGE_ACCELERATION", new g2o::HyperGraphElementCreator<EdgeAcceleration>);
@@ -334,8 +335,10 @@ bool TebOptimalPlanner::buildGraph(double weight_multiplier)
   
   AddEdgesAcceleration();
 
-  AddEdgesTimeOptimal();	
-  
+  AddEdgesTimeOptimal();
+
+  AddEdgesShortestPath();
+
   if (cfg_->robot.min_turning_radius == 0 || cfg_->optim.weight_kinematics_turning_radius == 0)
     AddEdgesKinematicsDiffDrive(); // we have a differential drive robot
   else
@@ -889,6 +892,25 @@ void TebOptimalPlanner::AddEdgesTimeOptimal()
 }
 
 
+void TebOptimalPlanner::AddEdgesShortestPath()
+{
+  if (cfg_->optim.weight_shortest_path==0)
+    return; // if weight equals zero skip adding edges!
+
+   Eigen::Matrix<double,1,1> information;
+  information.fill(cfg_->optim.weight_shortest_path);
+
+   for (int i=0; i < teb_.sizePoses()-1; ++i)
+  {
+    EdgeShortestPath* shortest_path_edge = new EdgeShortestPath;
+    shortest_path_edge->setVertex(0,teb_.PoseVertex(i));
+    shortest_path_edge->setVertex(1,teb_.PoseVertex(i+1));
+    shortest_path_edge->setInformation(information);
+    shortest_path_edge->setTebConfig(*cfg_);
+    optimizer_->addEdge(shortest_path_edge);
+  }
+}
+
 
 void TebOptimalPlanner::AddEdgesKinematicsDiffDrive()
 {
@@ -1216,6 +1238,7 @@ void TebOptimalPlanner::getFullTrajectory(std::vector<TrajectoryPointMsg>& traje
   goal.velocity.linear.y = vel_goal_.second.linear.y;
   goal.velocity.angular.z = vel_goal_.second.angular.z;
   goal.time_from_start.fromSec(curr_time);
+
 }
 
 
@@ -1247,6 +1270,58 @@ bool TebOptimalPlanner::isTrajectoryFeasible(base_local_planner::CostmapModel* c
   return true;
 }
 
+void TebOptimalPlanner::getFullTrajectory_temp(std::vector<TrajectoryPointMsg>& trajectory)
+{
+  int n = teb_.sizePoses();
+
+  trajectory.resize(n);
+
+  if (n == 0)
+    return;
+
+  double curr_time = 0;
+
+  // start
+  TrajectoryPointMsg& start = trajectory.front();
+  teb_.Pose(0).toPoseMsg(start.pose);
+  start.velocity.linear.z = 0;
+  start.velocity.angular.x = start.velocity.angular.y = 0;
+  start.velocity.linear.x = vel_start_.second.linear.x;
+  start.velocity.linear.y = vel_start_.second.linear.y;
+  start.velocity.angular.z = vel_start_.second.angular.z;
+  start.time_from_start.fromSec(curr_time);
+
+  curr_time += teb_.TimeDiff(0);
+
+  // intermediate points
+  for (int i=1; i < n-1; ++i)
+  {
+    TrajectoryPointMsg& point = trajectory[i];
+    teb_.Pose(i).toPoseMsg(point.pose);
+    point.velocity.linear.z = 0;
+    point.velocity.angular.x = point.velocity.angular.y = 0;
+    double vel1_x, vel1_y, vel2_x, vel2_y, omega1, omega2;
+    extractVelocity(teb_.Pose(i-1), teb_.Pose(i), teb_.TimeDiff(i-1), vel1_x, vel1_y, omega1);
+    extractVelocity(teb_.Pose(i), teb_.Pose(i+1), teb_.TimeDiff(i), vel2_x, vel2_y, omega2);
+    point.velocity.linear.x = 0.5*(vel1_x+vel2_x);
+    point.velocity.linear.y = 0.5*(vel1_y+vel2_y);
+    point.velocity.angular.z = 0.5*(omega1+omega2);
+    point.time_from_start.fromSec(curr_time);
+
+    curr_time += teb_.TimeDiff(i);
+  }
+
+  // goal
+  TrajectoryPointMsg& goal = trajectory.back();
+  teb_.BackPose().toPoseMsg(goal.pose);
+  goal.velocity.linear.z = 0;
+  goal.velocity.angular.x = goal.velocity.angular.y = 0;
+  goal.velocity.linear.x = vel_goal_.second.linear.x;
+  goal.velocity.linear.y = vel_goal_.second.linear.y;
+  goal.velocity.angular.z = vel_goal_.second.angular.z;
+  goal.time_from_start.fromSec(curr_time);
+
+}
 
 bool TebOptimalPlanner::isHorizonReductionAppropriate(const std::vector<geometry_msgs::PoseStamped>& initial_plan) const
 {
