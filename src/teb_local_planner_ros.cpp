@@ -42,6 +42,7 @@
 
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Bool.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -128,6 +129,7 @@ void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costm
     tf_ = tf;
     costmap_ros_ = costmap_ros;
     costmap_ = costmap_ros_->getCostmap(); // locking should be done in MoveBase.
+    infeasible_plans_pub = nh.advertise<std_msgs::Bool>("Infeasible_plans", 100);
 
     costmap_model_ = boost::make_shared<base_local_planner::CostmapModel>(*costmap_);
 
@@ -382,6 +384,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     ++no_infeasible_plans_; // increase number of infeasible solutions in a row
     time_last_infeasible_plan_ = ros::Time::now();
     last_cmd_ = cmd_vel;
+    infeasible_plans_pub.publish(true);
     return false;
   }
 
