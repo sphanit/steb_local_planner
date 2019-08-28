@@ -1,0 +1,4 @@
+init_marker_front
+search_makers
+x,y with respect to origin and height relative to ground in json file
+

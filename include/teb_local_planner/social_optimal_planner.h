@@ -120,10 +120,13 @@ protected:
   void AddEdgesDirectional();
   void AddEdgesVisibility();
   void AddEdgesLookatHuman();
-
+  void computeCurrentCostWithHumans(double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost);
+  bool optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards = true,
+                   double obst_cost_scale=1.0, double viapoint_cost_scale=1.0, bool alternative_time_cost=false) override;
   // external objects (store weak pointers)
   HumanContainer* humans_; //!< Store humans that are relevant for planning
 
+  std::map<std::string,double> cost_dict;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -135,6 +138,7 @@ typedef boost::shared_ptr<TebOptimalPlanner> TebOptimalPlannerPtr;
 typedef boost::shared_ptr<const TebOptimalPlanner> TebOptimalPlannerConstPtr;
 //! Abbrev. for containers storing multiple teb optimal planners
 typedef std::vector< TebOptimalPlannerPtr > TebOptPlannerContainer;
+
 
 } // namespace teb_local_planner
 

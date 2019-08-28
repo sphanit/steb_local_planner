@@ -111,6 +111,9 @@ void SocialTebOptimalPlanner::registerG2OTypesWithHumans()
   factory->registerType("EDGE_DYNAMIC_OBSTACLE", new g2o::HyperGraphElementCreator<EdgeDynamicObstacle>);
   factory->registerType("EDGE_VIA_POINT", new g2o::HyperGraphElementCreator<EdgeViaPoint>);
   factory->registerType("EDGE_PREFER_ROTDIR", new g2o::HyperGraphElementCreator<EdgePreferRotDir>);
+  factory->registerType("EDGE_SOCIAL_PROXEMICS", new g2o::HyperGraphElementCreator<EdgeProxemics>);
+  factory->registerType("EDGE_SOCIAL_LOOKAT_HUMAN", new g2o::HyperGraphElementCreator<EdgeLookatHuman>);
+
 }
 
 boost::shared_ptr<g2o::SparseOptimizer> SocialTebOptimalPlanner::initOptimizerWithHumans(){
@@ -396,6 +399,174 @@ void SocialTebOptimalPlanner::AddEdgesLookatHuman(){
       optimizer_->addEdge(lookathuman_edge);
     }
   }
+}
+
+void SocialTebOptimalPlanner::computeCurrentCostWithHumans(double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost)
+{
+  // check if graph is empty/exist  -> important if function is called between buildGraph and optimizeGraph/clearGraph
+  bool graph_exist_flag(false);
+  if (optimizer_->edges().empty() && optimizer_->vertices().empty())
+  {
+    // here the graph is build again, for time efficiency make sure to call this function
+    // between buildGraph and Optimize (deleted), but it depends on the application
+    buildGraph();
+    optimizer_->initializeOptimization();
+  }
+  else
+  {
+    graph_exist_flag = true;
+  }
+
+  optimizer_->computeInitialGuess();
+
+  cost_ = 0;
+
+  if (alternative_time_cost)
+  {
+    cost_ += teb_.getSumOfAllTimeDiffs();
+    // TEST we use SumOfAllTimeDiffs() here, because edge cost depends on number of samples, which is not always the same for similar TEBs,
+    // since we are using an AutoResize Function with hysteresis.
+  }
+
+  // now we need pointers to all edges -> calculate error for each edge-type
+  // since we aren't storing edge pointers, we need to check every edge
+  for (std::vector<g2o::OptimizableGraph::Edge*>::const_iterator it = optimizer_->activeEdges().begin(); it!= optimizer_->activeEdges().end(); it++)
+  {
+    EdgeTimeOptimal* edge_time_optimal = dynamic_cast<EdgeTimeOptimal*>(*it);
+    if (edge_time_optimal!=NULL && !alternative_time_cost)
+    {
+      cost_ += edge_time_optimal->getError().squaredNorm();
+      cost_dict["optimal_time"] = edge_time_optimal->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeKinematicsDiffDrive* edge_kinematics_dd = dynamic_cast<EdgeKinematicsDiffDrive*>(*it);
+    if (edge_kinematics_dd!=NULL)
+    {
+      cost_ += edge_kinematics_dd->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeKinematicsCarlike* edge_kinematics_cl = dynamic_cast<EdgeKinematicsCarlike*>(*it);
+    if (edge_kinematics_cl!=NULL)
+    {
+      cost_ += edge_kinematics_cl->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeVelocity* edge_velocity = dynamic_cast<EdgeVelocity*>(*it);
+    if (edge_velocity!=NULL)
+    {
+      cost_ += edge_velocity->getError().squaredNorm();
+      cost_dict["velocity"] = edge_velocity->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeAcceleration* edge_acceleration = dynamic_cast<EdgeAcceleration*>(*it);
+    if (edge_acceleration!=NULL)
+    {
+      cost_ += edge_acceleration->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeObstacle* edge_obstacle = dynamic_cast<EdgeObstacle*>(*it);
+    if (edge_obstacle!=NULL)
+    {
+      cost_ += edge_obstacle->getError().squaredNorm() * obst_cost_scale;
+      continue;
+    }
+
+    EdgeInflatedObstacle* edge_inflated_obstacle = dynamic_cast<EdgeInflatedObstacle*>(*it);
+    if (edge_inflated_obstacle!=NULL)
+    {
+      cost_ += std::sqrt(std::pow(edge_inflated_obstacle->getError()[0],2) * obst_cost_scale
+               + std::pow(edge_inflated_obstacle->getError()[1],2));
+      continue;
+    }
+
+    EdgeDynamicObstacle* edge_dyn_obstacle = dynamic_cast<EdgeDynamicObstacle*>(*it);
+    if (edge_dyn_obstacle!=NULL)
+    {
+      cost_ += edge_dyn_obstacle->getError().squaredNorm() * obst_cost_scale;
+      continue;
+    }
+
+    EdgeViaPoint* edge_viapoint = dynamic_cast<EdgeViaPoint*>(*it);
+    if (edge_viapoint!=NULL)
+    {
+      cost_ += edge_viapoint->getError().squaredNorm() * viapoint_cost_scale;
+      continue;
+    }
+
+    EdgeProxemics* edge_proxemics = dynamic_cast<EdgeProxemics*>(*it);
+    if (edge_proxemics!=NULL)
+    {
+      cost_ += edge_proxemics->getError().squaredNorm();
+      continue;
+    }
+
+    EdgeLookatHuman* edge_lookathuman = dynamic_cast<EdgeLookatHuman*>(*it);
+    if (edge_lookathuman!=NULL)
+    {
+      cost_ += edge_lookathuman->getError().squaredNorm();
+      continue;
+    }
+  }
+
+  // delete temporary created graph
+  if (!graph_exist_flag)
+    clearGraph();
+}
+
+bool SocialTebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards,
+                                    double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost)
+{
+  if (cfg_->optim.optimization_activate==false)
+    return false;
+
+  bool success = false;
+  optimized_ = false;
+
+  double weight_multiplier = 1.0;
+
+  // TODO(roesmann): we introduced the non-fast mode with the support of dynamic obstacles
+  //                (which leads to better results in terms of x-y-t homotopy planning).
+  //                 however, we have not tested this mode intensively yet, so we keep
+  //                 the legacy fast mode as default until we finish our tests.
+  bool fast_mode = !cfg_->obstacles.include_dynamic_obstacles;
+
+  for(int i=0; i<iterations_outerloop; ++i)
+  {
+    if (cfg_->trajectory.teb_autosize)
+    {
+      //teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples);
+      teb_.autoResize(cfg_->trajectory.dt_ref, cfg_->trajectory.dt_hysteresis, cfg_->trajectory.min_samples, cfg_->trajectory.max_samples, fast_mode);
+
+    }
+
+    success = buildGraph(weight_multiplier);
+    if (!success)
+    {
+        clearGraph();
+        return false;
+    }
+    success = optimizeGraph(iterations_innerloop, false);
+    if (!success)
+    {
+        clearGraph();
+        return false;
+    }
+    optimized_ = true;
+
+    if (compute_cost_afterwards && i==iterations_outerloop-1) // compute cost vec only in the last iteration
+      computeCurrentCostWithHumans(obst_cost_scale, viapoint_cost_scale, alternative_time_cost);
+
+    clearGraph();
+
+    weight_multiplier *= cfg_->optim.weight_adapt_factor;
+  }
+
+  return true;
 }
 
 } // namespace teb_local_planner
