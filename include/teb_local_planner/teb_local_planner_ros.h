@@ -411,6 +411,8 @@ private:
   std::shared_ptr<HumansProvider> humansProvider_;
   HumanContainer humans_;
 
+  ros::Publisher infeasible_plans_pub;
+
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

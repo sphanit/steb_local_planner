@@ -42,8 +42,10 @@
 
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Bool.h>
 
 #include <boost/algorithm/string.hpp>
+// #include <tf.h>
 
 // pluginlib macros
 #include <pluginlib/class_list_macros.h>
@@ -384,6 +386,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     ++no_infeasible_plans_; // increase number of infeasible solutions in a row
     time_last_infeasible_plan_ = ros::Time::now();
     last_cmd_ = cmd_vel;
+    infeasible_plans_pub.publish(true);
     return false;
   }
 
