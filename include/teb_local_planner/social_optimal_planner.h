@@ -121,6 +121,7 @@ protected:
   void AddEdgesVisibility();
   void AddEdgesLookatHuman();
   void computeCurrentCostWithHumans(double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost);
+  // bool optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards = true, double obst_cost_scale=1.0, double viapoint_cost_scale=1.0, bool alternative_time_cost=false);
   bool optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards = true,
                    double obst_cost_scale=1.0, double viapoint_cost_scale=1.0, bool alternative_time_cost=false) override;
   // external objects (store weak pointers)

@@ -19,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   pluginlib
+  tf
+  tf_conversions
   tf2
   tf2_eigen
   tf2_geometry_msgs
@@ -160,8 +162,8 @@ catkin_package(
 	pluginlib
 	roscpp
 	std_msgs
-        tf2
-        tf2_ros
+	tf
+	tf_conversions
 	visualization_msgs
   DEPENDS SUITESPARSE G2O
 )
@@ -227,10 +229,16 @@ target_link_libraries(test_optim_node
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(PROGRAMS
+  scripts/cmd_vel_to_ackermann_drive.py
+  scripts/export_to_mat.py
+  scripts/export_to_svg.py
+  scripts/publish_dynamic_obstacle.py
+  scripts/publish_test_obstacles.py
+  scripts/publish_viapoints.py
+  scripts/visualize_velocity_profile.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables and/or libraries for installation
 install(TARGETS teb_local_planner

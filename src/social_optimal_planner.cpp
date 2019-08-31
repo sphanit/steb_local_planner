@@ -518,15 +518,18 @@ void SocialTebOptimalPlanner::computeCurrentCostWithHumans(double obst_cost_scal
     clearGraph();
 }
 
+
 bool SocialTebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iterations_outerloop, bool compute_cost_afterwards,
                                     double obst_cost_scale, double viapoint_cost_scale, bool alternative_time_cost)
 {
-  if (cfg_->optim.optimization_activate==false)
+  int test = 0;
+  
+  if (cfg_->optim.optimization_activate==false) 
     return false;
-
+  
   bool success = false;
   optimized_ = false;
-
+  
   double weight_multiplier = 1.0;
 
   // TODO(roesmann): we introduced the non-fast mode with the support of dynamic obstacles
@@ -534,7 +537,7 @@ bool SocialTebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iteratio
   //                 however, we have not tested this mode intensively yet, so we keep
   //                 the legacy fast mode as default until we finish our tests.
   bool fast_mode = !cfg_->obstacles.include_dynamic_obstacles;
-
+  
   for(int i=0; i<iterations_outerloop; ++i)
   {
     if (cfg_->trajectory.teb_autosize)
@@ -545,24 +548,24 @@ bool SocialTebOptimalPlanner::optimizeTEB(int iterations_innerloop, int iteratio
     }
 
     success = buildGraph(weight_multiplier);
-    if (!success)
+    if (!success) 
     {
         clearGraph();
         return false;
     }
     success = optimizeGraph(iterations_innerloop, false);
-    if (!success)
+    if (!success) 
     {
         clearGraph();
         return false;
     }
     optimized_ = true;
-
+    
     if (compute_cost_afterwards && i==iterations_outerloop-1) // compute cost vec only in the last iteration
-      computeCurrentCostWithHumans(obst_cost_scale, viapoint_cost_scale, alternative_time_cost);
-
+      computeCurrentCost(obst_cost_scale, viapoint_cost_scale, alternative_time_cost);
+      
     clearGraph();
-
+    
     weight_multiplier *= cfg_->optim.weight_adapt_factor;
   }
 
