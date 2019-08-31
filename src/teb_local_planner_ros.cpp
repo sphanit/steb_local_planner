@@ -83,7 +83,8 @@ void TebLocalPlannerROS::reconfigureCB(TebLocalPlannerReconfigureConfig& config,
   cfg_.reconfigure(config);
 }
 
-void TebLocalPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf, costmap_2d::Costmap2DROS* costmap_ros)
+void TebLocalPlannerROS::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros, tf2_ros::Buffer* tf)
+// void TebLocalPlannerROS::initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros)
 {
   // check if the plugin is already initialized
   if(!initialized_)

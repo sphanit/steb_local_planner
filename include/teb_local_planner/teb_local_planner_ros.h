@@ -67,6 +67,11 @@
 #include <tf2/utils.h>
 #include <tf2_ros/buffer.h>
 
+// transforms
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
+
 // costmap
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_converter/costmap_converter_interface.h>
@@ -112,10 +117,12 @@ public:
     * @param tf Pointer to a tf buffer
     * @param costmap_ros Cost map representing occupied and free space
     */
-  void initialize(std::string name, tf2_ros::Buffer *tf, costmap_2d::Costmap2DROS* costmap_ros);
+  void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros, tf2_ros::Buffer *tf=NULL);
 
-  void initialize(std::string name, tf::TransformListener *tf, costmap_2d::Costmap2DROS* costmap_ros)
-  {
+  void initialize(std::string name, tf::TransformListener *tf1, costmap_2d::Costmap2DROS* costmap_ros){
+
+  initialize(name, costmap_ros);
+    
   }
 
   /**
@@ -362,6 +369,7 @@ private:
   costmap_2d::Costmap2DROS* costmap_ros_; //!< Pointer to the costmap ros wrapper, received from the navigation stack
   costmap_2d::Costmap2D* costmap_; //!< Pointer to the 2d costmap (obtained from the costmap ros wrapper)
   tf2_ros::Buffer* tf_; //!< pointer to tf buffer
+  tf::TransformListener* tf1_;
     
   // internal objects (memory management owned)
   PlannerInterfacePtr planner_; //!< Instance of the underlying optimal planner class
