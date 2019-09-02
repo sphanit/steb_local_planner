@@ -522,7 +522,7 @@ void TebLocalPlannerROS::updateObstacleContainerWithCustomObstacles()
     Eigen::Affine3d obstacle_to_map_eig;
     try 
     {
-      geometry_msgs::TransformStamped obstacle_to_map =  tf_->lookupTransform(global_frame_, ros::Time(0),
+      geometry_msgs::TransformStamped obstacle_to_map =  tf_->lookupTransform(global_frame_, ros::Time::now(),
                                                                               custom_obstacle_msg_.header.frame_id, ros::Time(0),
                                                                               custom_obstacle_msg_.header.frame_id, ros::Duration(0.5));
       obstacle_to_map_eig = tf2::transformToEigen(obstacle_to_map);
@@ -624,7 +624,7 @@ bool TebLocalPlannerROS::pruneGlobalPlan(const tf2_ros::Buffer& tf, const geomet
   try
   {
     // transform robot pose into the plan frame (we do not wait here, since pruning not crucial, if missed a few times)
-    geometry_msgs::TransformStamped global_to_plan_transform = tf.lookupTransform(global_plan.front().header.frame_id, global_pose.header.frame_id, ros::Time(0));
+    geometry_msgs::TransformStamped global_to_plan_transform = tf.lookupTransform(global_plan.front().header.frame_id, global_pose.header.frame_id, ros::Time::now());
     geometry_msgs::PoseStamped robot;
     tf2::doTransform(global_pose, robot, global_to_plan_transform);
     
@@ -680,7 +680,7 @@ bool TebLocalPlannerROS::transformGlobalPlan(const tf2_ros::Buffer& tf, const st
     }
 
     // get plan_to_global_transform from plan frame to global_frame
-    geometry_msgs::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, ros::Time(), plan_pose.header.frame_id, plan_pose.header.stamp,
+    geometry_msgs::TransformStamped plan_to_global_transform = tf.lookupTransform(global_frame, ros::Time::now(), plan_pose.header.frame_id, plan_pose.header.stamp,
                                                                                   plan_pose.header.frame_id, ros::Duration(0.5));
 
     //let's get the pose of the robot in the frame of the plan
