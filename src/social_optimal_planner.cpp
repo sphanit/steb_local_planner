@@ -92,6 +92,7 @@ void SocialTebOptimalPlanner::initialize(
 void SocialTebOptimalPlanner::registerG2OTypesWithHumans()
 {
   g2o::Factory* factory = g2o::Factory::instance();
+  /*
   factory->registerType("VERTEX_POSE", new g2o::HyperGraphElementCreator<VertexPose>);
   factory->registerType("VERTEX_TIMEDIFF", new g2o::HyperGraphElementCreator<VertexTimeDiff>);
 
@@ -111,6 +112,7 @@ void SocialTebOptimalPlanner::registerG2OTypesWithHumans()
   factory->registerType("EDGE_DYNAMIC_OBSTACLE", new g2o::HyperGraphElementCreator<EdgeDynamicObstacle>);
   factory->registerType("EDGE_VIA_POINT", new g2o::HyperGraphElementCreator<EdgeViaPoint>);
   factory->registerType("EDGE_PREFER_ROTDIR", new g2o::HyperGraphElementCreator<EdgePreferRotDir>);
+  */
   factory->registerType("EDGE_SOCIAL_PROXEMICS", new g2o::HyperGraphElementCreator<EdgeProxemics>);
   factory->registerType("EDGE_SOCIAL_LOOKAT_HUMAN", new g2o::HyperGraphElementCreator<EdgeLookatHuman>);
 
