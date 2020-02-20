@@ -45,6 +45,7 @@
 #include <teb_local_planner/teb_config.h>
 #include <teb_local_planner/timed_elastic_band.h>
 #include <teb_local_planner/robot_footprint_model.h>
+#include <teb_local_planner/TrajectoryMsg.h>
 
 // ros stuff
 #include <ros/publisher.h>
@@ -65,6 +66,7 @@
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+#include "metrics/TimeToGoal.h"
 #include <visualization_msgs/Marker.h>
 
 namespace teb_local_planner
@@ -230,6 +232,8 @@ public:
    */
   void publishFeedbackMessage(const TebOptimalPlanner& teb_planner, const ObstContainer& obstacles);
   
+  void publishTrajectory(const std::vector<TrajectoryPointMsg>& trajectory) const;
+
   //@}
 
   /**
@@ -255,6 +259,7 @@ protected:
   ros::Publisher teb_poses_pub_; //!< Publisher for the trajectory pose sequence
   ros::Publisher teb_marker_pub_; //!< Publisher for visualization markers
   ros::Publisher feedback_pub_; //!< Publisher for the feedback message for analysis and debug purposes
+  ros::Publisher robot_traj_time_pub_, robot_path_time_pub_;
   
   const TebConfig* cfg_; //!< Config class that stores and manages all related parameters
   

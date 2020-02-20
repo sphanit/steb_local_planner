@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   uwds
   uwds_msgs
   visualization_msgs
+  metrics
 )
 message(STATUS "System: ${CMAKE_SYSTEM}")
 ## System dependencies are found with CMake's conventions

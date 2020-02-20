@@ -39,6 +39,8 @@
 #include <teb_local_planner/visualization.h>
 #include <teb_local_planner/optimal_planner.h>
 #include <teb_local_planner/FeedbackMsg.h>
+#define ROBOT_TRAJ_TIME_TOPIC "traj_time"
+#define ROBOT_PATH_TIME_TOPIC "plan_time"
 
 namespace teb_local_planner
 {
@@ -66,7 +68,8 @@ void TebVisualization::initialize(ros::NodeHandle& nh, const TebConfig& cfg)
   teb_poses_pub_ = nh.advertise<geometry_msgs::PoseArray>("teb_poses", 100);
   teb_marker_pub_ = nh.advertise<visualization_msgs::Marker>("teb_markers", 1000);
   feedback_pub_ = nh.advertise<teb_local_planner::FeedbackMsg>("teb_feedback", 10);  
-  
+  robot_traj_time_pub_ = nh.advertise<metrics::TimeToGoal>(ROBOT_TRAJ_TIME_TOPIC, 1);
+  robot_path_time_pub_ = nh.advertise<metrics::TimeToGoal>(ROBOT_PATH_TIME_TOPIC, 1);
   initialized_ = true; 
 }
 
@@ -117,7 +120,56 @@ void TebVisualization::publishLocalPlanAndPoses(const TimedElasticBand& teb) con
     teb_poses_pub_.publish(teb_poses);
 }
 
+void TebVisualization::publishTrajectory(const std::vector<TrajectoryPointMsg>& trajectory) const {
 
+  auto frame_id = cfg_->map_frame;
+  auto now = ros::Time::now();
+
+  metrics::TimeToGoal robot_time_to_goal;
+  robot_time_to_goal.header.frame_id = frame_id;
+  robot_time_to_goal.header.stamp = now;
+
+  metrics::TimeToGoal robot_time_to_goal_full;
+  robot_time_to_goal_full.header.frame_id = frame_id;
+  robot_time_to_goal_full.header.stamp = now;
+
+  if (trajectory.size() > 0) {
+    robot_time_to_goal.time_to_goal = ros::Duration(trajectory.back().time_from_start);
+  } else {
+    robot_time_to_goal.time_to_goal = ros::Duration(0);
+  }
+
+  double remaining_path_dist = 0.0;
+  geometry_msgs::Pose previous_pose;
+  bool check = false;
+
+  for (auto &it : trajectory) {
+    geometry_msgs::Pose trajectory_point;
+    trajectory_point.position.x = it.pose.position.x;
+    trajectory_point.position.y = it.pose.position.y;
+    trajectory_point.position.z = it.pose.position.z;
+    trajectory_point.orientation = it.pose.orientation;
+    // trajectory_point.time_from_start.fromSec(-1.0);
+    // trajectory.points.push_back(trajectory_point);
+
+    if (check) {
+      remaining_path_dist +=
+              std::hypot(it.pose.position.x - previous_pose.position.x,
+                         it.pose.position.y - previous_pose.position.y);
+    }
+    previous_pose = it.pose;
+    check=true;
+  }
+
+  robot_time_to_goal_full.time_to_goal =
+      robot_time_to_goal.time_to_goal +
+      ros::Duration(remaining_path_dist / cfg_->robot.max_vel_x);
+
+  if(trajectory.size()>0) {
+    robot_traj_time_pub_.publish(robot_time_to_goal);
+    robot_path_time_pub_.publish(robot_time_to_goal_full);
+  }
+}
 
 void TebVisualization::publishRobotFootprintModel(const PoseSE2& current_pose, const BaseRobotFootprintModel& robot_model, const std::string& ns,
                                                   const std_msgs::ColorRGBA &color)

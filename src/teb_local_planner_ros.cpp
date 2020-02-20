@@ -357,6 +357,7 @@ bool TebLocalPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
   else
   {
     planner_->getFullTrajectory_temp(traj);
+    visualization_->publishTrajectory(traj);
   }
 
   // Check feasibility (but within the first few states only)
