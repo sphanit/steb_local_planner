@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   uwds
   uwds_msgs
   visualization_msgs
+  metrics
 )
 message(STATUS "System: ${CMAKE_SYSTEM}")
 ## System dependencies are found with CMake's conventions
@@ -59,7 +60,7 @@ set(EXTERNAL_LIBS ${SUITESPARSE_LIBRARIES} ${G2O_LIBRARIES})
 ## C++11 support
 ## Unfortunately, the 3d-party dependency libg2o requires c++11 starting from ROS Jade.
 ## Even if the ROS Jade specifications do not want c++11-only packages,
-## we cannot compile without c++11 enabled. Another option would be to downgrade  
+## we cannot compile without c++11 enabled. Another option would be to downgrade
 ## libg2o third-party package.
 ## By now, if you do not want c++11, please refer to the ros indigo version.
 IF(NOT MSVC)
@@ -71,7 +72,7 @@ if(COMPILER_SUPPORTS_CXX11)
 elseif(COMPILER_SUPPORTS_CXX0X)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support which is required 
+  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support which is required
   by linked third party packages starting from ROS Jade. Ignore this message for ROS Indigo.")
 endif()
 endif()
@@ -199,6 +200,8 @@ add_library(teb_local_planner
 add_dependencies(teb_local_planner ${PROJECT_NAME}_gencfg)
 # Generate messages before compiling the lib
 add_dependencies(teb_local_planner ${PROJECT_NAME}_generate_messages_cpp)
+#add_dependencies(metrics ${catkin_EXPORTED_TARGETS})
+
 
 target_link_libraries(teb_local_planner
    ${EXTERNAL_LIBS}
